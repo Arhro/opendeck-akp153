@@ -150,7 +150,7 @@ async fn device_events_task(candidate: &CandidateDevice) -> Result<(), MirajazzE
         };
 
         for update in updates {
-            log::debug!("New update: {:#?}", update);
+            log::info!("New update: {:#?}", update);
 
             let id = candidate.id.clone();
 
