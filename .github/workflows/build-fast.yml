@@ -1,0 +1,59 @@
+name: Build Fast opendeck-akp153 (Windows)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build Windows Fast
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout plugin repo
+        uses: actions/checkout@v3
+
+      - name: Clone mirajazz
+        run: |
+          git clone https://github.com/4ndv/mirajazz.git
+          cd mirajazz
+
+      - name: Patch mirajazz (0.5ms polling)
+        shell: pwsh
+        run: |
+          $file = "mirajazz/src/state.rs"
+          (Get-Content $file) |
+            ForEach-Object {
+              $_ -replace 'time::sleep\(timeout\)\.await;', 'time::sleep(std::time::Duration::from_micros(500)).await;'
+            } | Set-Content $file
+          Write-Host "Patch applied!"
+
+      - name: Replace mirajazz dependency to local patched version
+        shell: pwsh
+        run: |
+          $cargo = "Cargo.toml"
+          (Get-Content $cargo) |
+            ForEach-Object {
+              if ($_ -match '^mirajazz') {
+                'mirajazz = { path = "mirajazz" }'
+              } else {
+                $_
+              }
+            } | Set-Content $cargo
+          Write-Host "Updated Cargo.toml to use patched mirajazz"
+
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+          target: x86_64-pc-windows-msvc
+          override: true
+
+      - name: Build Release
+        run: cargo build --release
+
+      - name: Upload fast exe
+        uses: actions/upload-artifact@v3
+        with:
+          name: opendeck-akp153-fast
+          path: target/release/opendeck-akp153-win.exe
