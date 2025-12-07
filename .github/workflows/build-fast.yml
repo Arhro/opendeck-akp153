@@ -10,12 +10,11 @@ jobs:
 
     steps:
       - name: Checkout plugin repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Clone mirajazz
         run: |
           git clone https://github.com/4ndv/mirajazz.git
-          cd mirajazz
 
       - name: Patch mirajazz (0.5ms polling)
         shell: pwsh
@@ -27,7 +26,7 @@ jobs:
             } | Set-Content $file
           Write-Host "Patch applied!"
 
-      - name: Replace mirajazz dependency to local patched version
+      - name: Replace mirajazz dependency to local version
         shell: pwsh
         run: |
           $cargo = "Cargo.toml"
@@ -41,19 +40,15 @@ jobs:
             } | Set-Content $cargo
           Write-Host "Updated Cargo.toml to use patched mirajazz"
 
-      - name: Install Rust toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          profile: minimal
-          target: x86_64-pc-windows-msvc
-          override: true
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
 
       - name: Build Release
         run: cargo build --release
 
       - name: Upload fast exe
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: opendeck-akp153-fast
           path: target/release/opendeck-akp153-win.exe
+
